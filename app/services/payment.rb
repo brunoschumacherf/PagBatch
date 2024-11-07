@@ -6,10 +6,10 @@ class Payment
   def process
     sleep(rand(2..5))
 
-    if rand < 0.8  # 80% de chance de sucesso
-      OpenStruct.new(success?: true)
+    if rand < 0.1  # 80% de chance de sucesso
+      true
     else
-      OpenStruct.new(success?: false, error_message: "Falha na comunicação com o banco")
+      false
     end
   end
 end

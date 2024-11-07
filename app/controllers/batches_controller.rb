@@ -20,23 +20,23 @@ class BatchesController < ApplicationController
       render :create and return
     end
 
+    file_path = Rails.root.join('public', 'uploads', file.original_filename)
+    FileUtils.mkdir_p(Rails.root.join('public', 'uploads')) unless File.directory?(Rails.root.join('public', 'uploads'))
+    File.open(file_path, 'wb') do |f|
+      f.write(file.read)
+    end
+
     begin
       batch = Batch.create!(status: :pendente)
+      CsvImportWorker.perform_async(batch.id, file_path)
 
-      CSV.foreach(file.path, headers: true) do |row|
-        Boleto.create!(
-          batch: batch,
-          barcode: row["id"],
-          valor: row["valor"],
-          status: 'pendente'
-        )
-      end
-      @message = "Boletos importados com sucesso!"
+      @message = "Boletos estão sendo processados e pagos em segundo plano!"
       redirect_to '/'
     rescue StandardError => e
-      batch.destroy!
+      batch.destroy! if batch.persisted?
       @error = "Erro ao processar o arquivo: #{e.message}"
       render :create
     end
   end
+
 end
